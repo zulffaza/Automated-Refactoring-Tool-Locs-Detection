@@ -1,4 +1,4 @@
-package com.finalproject.automated.refactoring.tool.locs.detection;
+package com.finalproject.automated.refactoring.tool;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

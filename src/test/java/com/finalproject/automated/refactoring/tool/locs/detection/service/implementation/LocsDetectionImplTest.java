@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 
 public class LocsDetectionImplTest {
 
-    private static final Integer LLOC_COUNT = 27;
+    private static final Long LLOC_COUNT = 27L;
 
     private LocsDetectionImpl locsDetection;
 
@@ -27,13 +27,13 @@ public class LocsDetectionImplTest {
 
     @Test
     public void llocDetection_success() {
-        Integer count = locsDetection.llocDetection(body);
+        Long count = locsDetection.llocDetection(body);
         assertEquals(LLOC_COUNT, count);
     }
 
     @Test
     public void llocDetection_success_emptyBody() {
-        Integer count = locsDetection.llocDetection("");
+        Long count = locsDetection.llocDetection("");
         assertEquals(0, count.intValue());
     }
 
