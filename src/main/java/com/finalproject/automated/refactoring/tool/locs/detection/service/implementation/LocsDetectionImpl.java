@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,20 +24,20 @@ public class LocsDetectionImpl implements LocsDetection {
     private static final List<String> ESCAPES = Arrays.asList("//", "/*", "*/", "*", "import", "package");
 
     @Override
-    public Integer llocDetection(String body) {
+    public Long llocDetection(String body) {
         List<String> lines = Arrays.asList(body.split(NEW_LINE_DELIMITER));
-        AtomicInteger counter = new AtomicInteger();
+        AtomicLong counter = new AtomicLong();
 
         lines.forEach(line -> detect(line, counter));
 
         return counter.get();
     }
 
-    private void detect(String line, AtomicInteger atomicInteger) {
+    private void detect(String line, AtomicLong atomicLong) {
         line = line.trim();
 
         if (isValid(line))
-            countStatement(line, atomicInteger);
+            countStatement(line, atomicLong);
     }
 
     private Boolean isValid(String line) {
@@ -58,11 +58,11 @@ public class LocsDetectionImpl implements LocsDetection {
         return line.isEmpty();
     }
 
-    private void countStatement(String line, AtomicInteger atomicInteger) {
+    private void countStatement(String line, AtomicLong atomicLong) {
         Pattern pattern = Pattern.compile(STATEMENTS_DELIMITER);
         Matcher matcher = pattern.matcher(line);
 
         while (matcher.find())
-            atomicInteger.getAndIncrement();
+            atomicLong.getAndIncrement();
     }
 }

@@ -1,5 +1,7 @@
 package com.finalproject.automated.refactoring.tool.locs.detection.service;
 
+import lombok.NonNull;
+
 /**
  * @author fazazulfikapp
  * @version 1.0.0
@@ -8,5 +10,5 @@ package com.finalproject.automated.refactoring.tool.locs.detection.service;
 
 public interface LocsDetection {
 
-    Integer llocDetection(String body);
+    Long llocDetection(@NonNull String body);
 }
