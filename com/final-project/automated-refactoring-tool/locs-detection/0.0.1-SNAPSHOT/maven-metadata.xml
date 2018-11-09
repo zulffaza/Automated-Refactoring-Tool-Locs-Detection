@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>com.final-project.automated-refactoring-tool</groupId>
+  <artifactId>locs-detection</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20181109.061945</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <lastUpdated>20181109061945</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>0.0.1-20181109.061945-1</value>
+        <updated>20181109061945</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>0.0.1-20181109.061945-1</value>
+        <updated>20181109061945</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
