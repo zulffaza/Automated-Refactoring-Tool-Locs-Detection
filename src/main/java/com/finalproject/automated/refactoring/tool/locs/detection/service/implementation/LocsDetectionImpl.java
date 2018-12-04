@@ -28,7 +28,8 @@ public class LocsDetectionImpl implements LocsDetection {
         List<String> lines = Arrays.asList(body.split(NEW_LINE_DELIMITER));
         AtomicLong counter = new AtomicLong();
 
-        lines.forEach(line -> detect(line, counter));
+        lines.forEach(line ->
+                detect(line, counter));
 
         return counter.get();
     }
@@ -36,8 +37,9 @@ public class LocsDetectionImpl implements LocsDetection {
     private void detect(String line, AtomicLong atomicLong) {
         line = line.trim();
 
-        if (isValid(line))
+        if (isValid(line)) {
             countStatement(line, atomicLong);
+        }
     }
 
     private Boolean isValid(String line) {
@@ -46,12 +48,16 @@ public class LocsDetectionImpl implements LocsDetection {
 
     private Boolean isEscapes(String line) {
         for (String escape : ESCAPES) {
-            if (line.startsWith(escape)) {
-                return true;
+            if (isStartsWith(line, escape)) {
+                return Boolean.TRUE;
             }
         }
 
-        return false;
+        return Boolean.FALSE;
+    }
+
+    private Boolean isStartsWith(String line, String escape) {
+        return line.startsWith(escape);
     }
 
     private Boolean isEmpty(String line) {
@@ -62,7 +68,12 @@ public class LocsDetectionImpl implements LocsDetection {
         Pattern pattern = Pattern.compile(STATEMENTS_DELIMITER);
         Matcher matcher = pattern.matcher(line);
 
-        while (matcher.find())
+        while (isFind(matcher)) {
             atomicLong.getAndIncrement();
+        }
+    }
+
+    private Boolean isFind(Matcher matcher) {
+        return matcher.find();
     }
 }
