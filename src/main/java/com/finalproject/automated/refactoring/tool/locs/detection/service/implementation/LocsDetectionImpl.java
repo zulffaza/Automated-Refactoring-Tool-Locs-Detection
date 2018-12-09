@@ -1,11 +1,11 @@
 package com.finalproject.automated.refactoring.tool.locs.detection.service.implementation;
 
 import com.finalproject.automated.refactoring.tool.locs.detection.service.LocsDetection;
+import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,62 +18,50 @@ import java.util.regex.Pattern;
 @Service
 public class LocsDetectionImpl implements LocsDetection {
 
+    private static final Long INITIAL_COUNT = 0L;
+
     private static final String NEW_LINE_DELIMITER = "\n";
     private static final String STATEMENTS_DELIMITER = "(?:[;{])";
 
-    private static final List<String> ESCAPES = Arrays.asList("//", "/*", "*/", "*", "import", "package");
+    private static final List<String> ESCAPES_KEYWORDS = Arrays.asList("//", "/*", "*/", "*", "import", "package");
 
     @Override
-    public Long llocDetection(String body) {
+    public Long llocDetection(@NonNull String body) {
         List<String> lines = Arrays.asList(body.split(NEW_LINE_DELIMITER));
-        AtomicLong counter = new AtomicLong();
 
-        lines.forEach(line ->
-                detect(line, counter));
-
-        return counter.get();
-    }
-
-    private void detect(String line, AtomicLong atomicLong) {
-        line = line.trim();
-
-        if (isValid(line)) {
-            countStatement(line, atomicLong);
-        }
+        return lines.stream()
+                .map(String::trim)
+                .filter(this::isValid)
+                .mapToLong(this::countStatement)
+                .sum();
     }
 
     private Boolean isValid(String line) {
-        return !isEscapes(line) && !isEmpty(line);
+        return !line.isEmpty() && !isEscapes(line);
     }
 
     private Boolean isEscapes(String line) {
-        for (String escape : ESCAPES) {
-            if (isStartsWith(line, escape)) {
-                return Boolean.TRUE;
-            }
-        }
+        Long count = ESCAPES_KEYWORDS.stream()
+                .filter(line::startsWith)
+                .count();
 
-        return Boolean.FALSE;
+        return count > INITIAL_COUNT;
     }
 
-    private Boolean isStartsWith(String line, String escape) {
-        return line.startsWith(escape);
-    }
-
-    private Boolean isEmpty(String line) {
-        return line.isEmpty();
-    }
-
-    private void countStatement(String line, AtomicLong atomicLong) {
+    private Long countStatement(String line) {
         Pattern pattern = Pattern.compile(STATEMENTS_DELIMITER);
         Matcher matcher = pattern.matcher(line);
 
-        while (isFind(matcher)) {
-            atomicLong.getAndIncrement();
-        }
+        return countMatch(matcher);
     }
 
-    private Boolean isFind(Matcher matcher) {
-        return matcher.find();
+    private Long countMatch(Matcher matcher) {
+        Long count = INITIAL_COUNT;
+
+        while (matcher.find()) {
+            count++;
+        }
+
+        return count;
     }
 }
