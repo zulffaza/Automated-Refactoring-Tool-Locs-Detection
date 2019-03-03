@@ -6,8 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Stack;
 
 /**
  * @author fazazulfikapp
@@ -21,15 +20,19 @@ public class LocsDetectionImpl implements LocsDetection {
     private static final Long INITIAL_COUNT = 0L;
 
     private static final String NEW_LINE_DELIMITER = "\n";
-    private static final String STATEMENTS_DELIMITER = "(?:[;{])";
+
+    private static final Character DOUBLE_QUOTE_CHARACTER = '\"';
+    private static final Character ESCAPE_CHARACTER = '\\';
 
     private static final List<String> ESCAPES_KEYWORDS = Arrays.asList("//", "/*", "*/", "*", "import", "package");
+
+    private static final List<Character> STATEMENTS_KEYWORDS = Arrays.asList(';', '{');
 
     @Override
     public Long llocDetection(@NonNull String body) {
         List<String> lines = Arrays.asList(body.split(NEW_LINE_DELIMITER));
 
-        return lines.stream()
+        return lines.parallelStream()
                 .map(String::trim)
                 .filter(this::isValid)
                 .mapToLong(this::countStatement)
@@ -49,19 +52,36 @@ public class LocsDetectionImpl implements LocsDetection {
     }
 
     private Long countStatement(String line) {
-        Pattern pattern = Pattern.compile(STATEMENTS_DELIMITER);
-        Matcher matcher = pattern.matcher(line);
+        Stack<Character> stack = new Stack<>();
+        Boolean isEscape = Boolean.FALSE;
+        Long countedStatement = INITIAL_COUNT;
 
-        return countMatch(matcher);
-    }
+        for (int index = 0; index < line.length(); index++) {
+            Character character = line.charAt(index);
 
-    private Long countMatch(Matcher matcher) {
-        Long count = INITIAL_COUNT;
+            if (isEscape) {
+                isEscape = Boolean.FALSE;
+                continue;
+            }
 
-        while (matcher.find()) {
-            count++;
+            if (character.equals(DOUBLE_QUOTE_CHARACTER)) {
+                if (stack.empty())
+                    stack.push(character);
+                else
+                    stack.pop();
+
+                continue;
+            }
+
+            if (character.equals(ESCAPE_CHARACTER)) {
+                isEscape = Boolean.TRUE;
+                continue;
+            }
+
+            if (stack.empty() && STATEMENTS_KEYWORDS.contains(character))
+                countedStatement++;
         }
 
-        return count;
+        return countedStatement;
     }
 }
