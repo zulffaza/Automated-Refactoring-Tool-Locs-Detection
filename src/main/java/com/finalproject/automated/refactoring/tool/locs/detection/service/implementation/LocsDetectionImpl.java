@@ -6,9 +6,7 @@ import lombok.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,22 +31,14 @@ public class LocsDetectionImpl implements LocsDetection {
 
     private static final List<String> ESCAPES_KEYWORDS = Arrays.asList("//", "/*", "*/", "*", "import", "package");
 
+    private static final List<Character> QUOTES_KEYWORDS = Arrays.asList(SINGLE_QUOTE_CHARACTER, DOUBLE_QUOTE_CHARACTER);
     private static final List<Character> STATEMENTS_KEYWORDS = Arrays.asList(';', '{');
-
-    private static final Map<Character, Character> ESCAPES_STATEMENTS_KEYWORDS;
-
-    static {
-        ESCAPES_STATEMENTS_KEYWORDS = new HashMap<>();
-        ESCAPES_STATEMENTS_KEYWORDS.put(DOUBLE_QUOTE_CHARACTER, DOUBLE_QUOTE_CHARACTER);
-        ESCAPES_STATEMENTS_KEYWORDS.put(SINGLE_QUOTE_CHARACTER, SINGLE_QUOTE_CHARACTER);
-        ESCAPES_STATEMENTS_KEYWORDS.put(OPEN_PARENTHESES_CHARACTER, CLOSED_PARENTHESES_CHARACTER);
-    }
 
     @Override
     public Long llocDetection(@NonNull String body) {
         List<String> lines = Arrays.asList(body.split(NEW_LINE_DELIMITER));
 
-        return lines.stream()
+        return lines.parallelStream()
                 .map(String::trim)
                 .filter(this::isValid)
                 .mapToLong(this::countStatement)
@@ -70,8 +60,6 @@ public class LocsDetectionImpl implements LocsDetection {
     private Long countStatement(String line) {
         CountingStatementVA countingStatementVA = new CountingStatementVA();
 
-        System.out.println(line);
-
         for (int index = 0; index < line.length(); index++) {
             countingStatement(line.charAt(index), countingStatementVA);
         }
@@ -80,75 +68,77 @@ public class LocsDetectionImpl implements LocsDetection {
                 .get();
     }
 
-
     private void countingStatement(Character character, CountingStatementVA countingStatementVA) {
-        ifStringExpression(character, countingStatementVA);
-//        ifParenthesesExpression(character, countingStatementVA.getStack());
-        ifEscapeCharacter(character, countingStatementVA.getEscape());
-        ifStatement(character, countingStatementVA);
+        searchWantedExpression(character, DOUBLE_QUOTE_CHARACTER, countingStatementVA);
+        searchWantedExpression(character, SINGLE_QUOTE_CHARACTER, countingStatementVA);
+        searchParenthesesExpression(character, countingStatementVA.getStack());
+        searchEscapeCharacter(character, countingStatementVA.getEscape());
+        searchStatement(character, countingStatementVA);
     }
 
-    private void ifStringExpression(Character character, CountingStatementVA countingStatementVA) {
-        if (!countingStatementVA.getEscape().get()) {
-            Boolean isValid = (!countingStatementVA.getStack().empty() &&
-                    (countingStatementVA.getStack().peek().equals(DOUBLE_QUOTE_CHARACTER) ||
-                            countingStatementVA.getStack().peek().equals(SINGLE_QUOTE_CHARACTER)))
-                    || countingStatementVA.getStack().empty();
-
-            System.out.println("For : " + character + " is " + isValid);
-
-            if (isValid) {
-                if (ESCAPES_STATEMENTS_KEYWORDS.containsValue(character) && !countingStatementVA.getStack().empty()) {
-                    System.out.println(character);
-                    countingStatementVA.getStack().pop();
-                } else if (ESCAPES_STATEMENTS_KEYWORDS.containsKey(character)) {
-                    System.out.println(character);
-                    countingStatementVA.getStack().push(character);
-                }
-            }
+    private void searchWantedExpression(Character character, Character wantedCharacter,
+                                        CountingStatementVA countingStatementVA) {
+        if (isWantedExpression(character, wantedCharacter, countingStatementVA.getEscape())) {
+            analyzeWantedExpression(character, wantedCharacter, countingStatementVA.getStack());
         }
     }
 
-    //    ("(hello {\"name\"}), (good {\"greeting\"}), (morning {\"vibes\"})")
-
-    private Boolean isStringExpression(Character character, AtomicBoolean escape) {
-        return character.equals(DOUBLE_QUOTE_CHARACTER) &&
+    private Boolean isWantedExpression(Character character, Character wantedCharacter,
+                                       AtomicBoolean escape) {
+        return character.equals(wantedCharacter) &&
                 !escape.get();
     }
 
-    private void ifParenthesesExpression(Character character, Stack<Character> stack) {
-        if (character.equals(OPEN_PARENTHESES_CHARACTER)) {
-            System.out.println(character);
+    private void analyzeWantedExpression(Character character, Character wantedCharacter,
+                                         Stack<Character> stack) {
+        if (stack.empty()) {
             stack.push(character);
-        }
-
-        if (isClosedParentheses(character, stack)) {
-            System.out.println(character);
+        } else if (stack.peek().equals(wantedCharacter)) {
             stack.pop();
         }
     }
 
-    private Boolean isClosedParentheses(Character character, Stack<Character> stack) {
+    private void searchParenthesesExpression(Character character, Stack<Character> stack) {
+        if (character.equals(OPEN_PARENTHESES_CHARACTER)) {
+            analyzeOpenParenthesesExpression(character, stack);
+        }
+
+        if (isClosedParenthesesExpression(character, stack)) {
+            stack.pop();
+        }
+    }
+
+    private void analyzeOpenParenthesesExpression(Character character, Stack<Character> stack) {
+        Boolean isQuotes = isQuotes(stack);
+        stack.push(character);
+
+        redoPushIfInsideQuotes(isQuotes, stack);
+    }
+
+    private Boolean isQuotes(Stack<Character> stack) {
         return !stack.empty() &&
-                character.equals(CLOSED_PARENTHESES_CHARACTER);
+                QUOTES_KEYWORDS.contains(stack.peek());
     }
 
-    private void ifEscapeCharacter(Character character, AtomicBoolean escape) {
-        if (escape.get()) {
-            escape.set(Boolean.FALSE);
-        }
-
-        if (character.equals(ESCAPE_CHARACTER) && !escape.get()) {
-            escape.set(Boolean.TRUE);
+    private void redoPushIfInsideQuotes(Boolean isQuotes, Stack stack) {
+        if (isQuotes) {
+            stack.pop();
         }
     }
 
-    private void ifStatement(Character character, CountingStatementVA countingStatementVA) {
+    private Boolean isClosedParenthesesExpression(Character character, Stack<Character> stack) {
+        return character.equals(CLOSED_PARENTHESES_CHARACTER) &&
+                !stack.empty() &&
+                stack.peek().equals(OPEN_PARENTHESES_CHARACTER);
+    }
+
+    private void searchEscapeCharacter(Character character, AtomicBoolean escape) {
+        escape.set(character.equals(ESCAPE_CHARACTER) && !escape.get());
+    }
+
+    private void searchStatement(Character character, CountingStatementVA countingStatementVA) {
         if (isStatement(character, countingStatementVA.getStack())) {
-            System.out.println("Count...");
             countingStatementVA.getCountedStatement().getAndIncrement();
-        } else if (!countingStatementVA.getStack().empty()) {
-            System.out.println("Peek --> " + countingStatementVA.getStack().peek());
         }
     }
 
