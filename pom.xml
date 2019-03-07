@@ -33,6 +33,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.final-project.automated-refactoring-tool</groupId>
+            <artifactId>utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
@@ -43,6 +49,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>Automated-Refactoring-Tool-Utils</id>
+            <url>https://raw.github.com/zulffaza/Automated-Refactoring-Tool-Utils/mvn-repo/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
