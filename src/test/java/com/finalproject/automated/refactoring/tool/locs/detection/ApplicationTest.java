@@ -1,27 +1,34 @@
-package com.finalproject.automated.refactoring.tool.locs.detection.service.implementation;
+package com.finalproject.automated.refactoring.tool.locs.detection;
 
+import com.finalproject.automated.refactoring.tool.locs.detection.service.implementation.LocsDetectionImpl;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author fazazulfikapp
  * @version 1.0.0
- * @since 24 October 2018
+ * @since 8 March 2019
  */
 
-public class LocsDetectionImplTest {
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class ApplicationTest {
+
+    @Autowired
+    private LocsDetectionImpl locsDetection;
 
     private static final Long LLOC_COUNT = 63L;
-
-    private LocsDetectionImpl locsDetection;
 
     private String body;
 
     @Before
     public void setUp() {
-        locsDetection = new LocsDetectionImpl();
         body = createBody();
     }
 
